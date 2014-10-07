@@ -1,19 +1,38 @@
 var dbPool = require('./DbPool.js');
 var DbCursor = require('./DbCursor.js');
+var prop = require('./Prop.js');
+var dateUtil = require('../util/DateUtil.js');
+var log = require('../util/McpLog.js');
 
-var Table = function(db, name, engine, colList){
+var Table = function(db, name, colList){
     var self = this;
     self.db = db;
     self.name = name;
-    self.engine = engine;
     self.colList = new Array();
     for(var key in colList)
     {
         var col = colList[key];
-        self.colList[col.getName()] = col;
+        if(self.db.type == prop.dbType.oracle)
+        {
+            self.colList[col.getName().toUpperCase()] = col;
+        }
+        else
+        {
+            self.colList[col.getName()] = col;
+        }
     }
 };
 
+Table.prototype.traverse = function()
+{
+    var self = this;
+    log.info("----------------table:" + self.name + "----------------");
+    for(var key in self.colList)
+    {
+        var col = self.colList[key];
+        col.traverse();
+    }
+};
 
 Table.prototype.getDb = function()
 {
@@ -55,48 +74,140 @@ Table.prototype.getName = function()
 };
 
 /**
+ * 删除表
+ */
+Table.prototype.drop = function(cb)
+{
+    var self = this;
+    if(self.db.type == prop.dbType.mysql || self.db.type == prop.dbType.oracle)
+    {
+        var dropSql = "drop table " + self.name;
+        log.info(dropSql);
+        var conn = self.db.pool.getConn();
+        conn.execute(dropSql, [], cb);
+    }
+    else if(self.db.type == prop.dbType.mongodb)
+    {
+        var conn = self.db.pool.getConn().conn;
+        conn.dropCollection(self.name, cb);
+    }
+};
+
+/**
+ * 创建表
+ * @param cb
+ */
+Table.prototype.create = function(cb)
+{
+    var self = this;
+    if(self.db.type == prop.dbType.mysql || self.db.type == prop.dbType.oracle)
+    {
+        var sql = self.getDdl();
+        var conn = self.db.pool.getConn();
+        conn.execute(sql, [], cb);
+    }
+    else if(self.db.type == prop.dbType.mongodb)
+    {
+        var conn = self.db.pool.getConn().conn;
+        conn.createCollection(self.name, [], cb);
+    }
+};
+
+/**
+ * 查找单条记录
+ * @param condition
+ * @param options
+ * @param cb
+ */
+Table.prototype.findOne = function(condition, options, cb)
+{
+    var self = this;
+    if(self.db.type == prop.dbType.mongodb)
+    {
+        self.col.findOne(condition, options, cb);
+    }
+};
+
+Table.prototype.findAndModify = function(query, sort, doc, options, cb)
+{
+    var self = this;
+    if(self.db.type == prop.dbType.mongodb)
+    {
+        self.col.findAndModify(query, sort, doc, options, cb);
+    }
+};
+
+/**
  * 保存对象
  * @param cb
  */
-Table.prototype.save = function(data, cb)
+Table.prototype.save = function(data, options, cb)
 {
     var self = this;
-    var sql = "insert into " + self.name + "(";
-    var keyStr = '';
-    var valueStr = '';
-    var i = 0;
-    for(var key in data)
+    if(self.db.type == prop.dbType.mongodb)
     {
-        //如果没有相关的列，则直接忽略
-        if(self.colList[key] == undefined)
-        {
-            continue;
-        }
-        if(i > 0)
-        {
-            keyStr += ",";
-            valueStr += ",";
-        }
-        keyStr += key;
-        var value = data[key];
-        if(typeof value == "string")
-        {
-            valueStr += "'" + value + "'";
-        }
-        else
-        {
-            valueStr += value;
-        }
-        i++;
+        self.col.save(data, options, cb);
     }
-    sql += keyStr + ") values(" + valueStr + ");";
-    console.log(sql);
-    self.db.getConn().query(sql, function(err, rows, fields) {
-        if(cb != undefined)
+    else
+    {
+        var sql = "insert into " + self.name + "(";
+        var keyStr = '';
+        var valueStr = '';
+        var i = 0;
+        for(var key in data)
         {
-            cb(err, rows, data);
+            //如果没有相关的列，则直接忽略
+            var col = self.colList[key];
+            if(col == undefined)
+            {
+                continue;
+            }
+            if(i > 0)
+            {
+                keyStr += ",";
+                valueStr += ",";
+            }
+            keyStr += key;
+            var value = data[key];
+            if(typeof value == "string")
+            {
+                valueStr += "'" + value + "'";
+            }
+            else if(typeof value == 'object')
+            {
+                if(col.type == 'date')
+                {
+                    if(self.db.type == prop.dbType.oracle)
+                    {
+                        valueStr += "to_date('" + dateUtil.toString(value) + "', 'yyyy-MM-dd HH24:mi:ss')";
+                    }
+                    else if(self.db.type == prop.dbType.mysql)
+                    {
+                        valueStr += "'" + dateUtil.toString(value) + "'";
+                    }
+                    else
+                    {
+                        valueStr += "'" + value + "'";
+                    }
+                }
+                else
+                {
+                    valueStr += "'" + value + "'";
+                }
+            }
+            else
+            {
+                valueStr += value;
+            }
+            i++;
         }
-    });
+        sql += keyStr + ") values(" + valueStr + ")";
+        log.info(sql);
+        var conn = self.db.pool.getConn();
+        conn.execute(sql, options, function(err, data){
+            cb(err, data);
+        });
+    }
 };
 
 /**
@@ -130,7 +241,34 @@ Table.prototype.getUpdateStr = function(data)
                         {
                             pStr += ",";
                         }
-                        pStr += self.getKvPair(col, "=", setData[setKey]);
+                        pStr += self.getKvPair(setKey, "=", setData[setKey]);
+                        kCount++;
+                    }
+                }
+            }
+            else if(keyArray[1] == 'inc')
+            {
+                var setData = data[key];
+                for(var setKey in setData)
+                {
+                    var col = self.colList[setKey];
+                    if(col == undefined)
+                    {
+                        //如果没有相关的列，则直接忽略
+                        continue;
+                    }
+                    else
+                    {
+                        if(kCount > 0)
+                        {
+                            pStr += ",";
+                        }
+                        pStr += setKey + "=" + setKey;
+                        if(setData[setKey] > 0)
+                        {
+                            pStr += "+";
+                        }
+                        pStr += setData[setKey];
                         kCount++;
                     }
                 }
@@ -146,20 +284,32 @@ Table.prototype.getUpdateStr = function(data)
 Table.prototype.update = function(condition, data, option, cb)
 {
     var self = this;
-    var sql = "update " + self.name + " set ";
-    sql += self.getUpdateStr(data);
-    var conditionStr = self.condition(condition);
-    if(conditionStr.length > 0)
+    if(self.db.type == prop.dbType.mongodb)
     {
-        sql += " where " + conditionStr;
+        self.col.update(condition, data, option, cb);
     }
-    console.log(sql);
-    self.db.getConn().query(sql, function(err, rows, fields) {
-        if(cb != undefined)
+    else
+    {
+        var sql = "update " + self.name + " set ";
+        sql += self.getUpdateStr(data);
+        var conditionStr = self.condition(condition);
+        if(conditionStr.length > 0)
         {
-            cb(err, rows, data);
+            sql += " where " + conditionStr;
         }
-    });
+        log.info(sql);
+        var conn = self.db.pool.getConn();
+        conn.execute(sql, option, function(err, data){
+            if(data)
+            {
+                if(self.db.type == prop.dbType.oracle)
+                {
+                    data.affectedRows = data.updateCount;
+                }
+            }
+            cb(err, data);
+        });
+    }
 };
 
 /**
@@ -179,12 +329,6 @@ Table.prototype.condition = function(data, parentKey)
         var conditionArray = key.match(/\$([a-z]+)/);
         if(!conditionArray)
         {
-            var col = self.colList[key];
-            if(col == undefined)
-            {
-                //如果没有相关的列，则直接忽略
-                continue;
-            }
             var kv = "(";
             if(typeof data[key] == 'object')
             {
@@ -192,7 +336,7 @@ Table.prototype.condition = function(data, parentKey)
             }
             else
             {
-                kv += self.getKvPair(col, "=", data[key]);
+                kv += self.getKvPair(key, "=", data[key]);
             }
             kv += ")";
             conditionStr += kv;
@@ -218,32 +362,26 @@ Table.prototype.condition = function(data, parentKey)
             }
             else if(conditionArray[1] == 'gt')
             {
-                var col = self.colList[parentKey];
-                expression += self.getKvPair(col, ">", data[key]);
+                expression += self.getKvPair(parentKey, ">", data[key]);
             }
             else if(conditionArray[1] == 'gte')
             {
-                var col = self.colList[parentKey];
-                expression += self.getKvPair(col, ">=", data[key]);
+                expression += self.getKvPair(parentKey, ">=", data[key]);
             }
             else if(conditionArray[1] == 'lt')
             {
-                var col = self.colList[parentKey];
-                expression += self.getKvPair(col, "<", data[key]);
+                expression += self.getKvPair(parentKey, "<", data[key]);
             }
             else if(conditionArray[1] == 'lte')
             {
-                var col = self.colList[parentKey];
-                expression += self.getKvPair(col, "<=", data[key]);
+                expression += self.getKvPair(parentKey, "<=", data[key]);
             }
             else if(conditionArray[1] == 'ne')
             {
-                var col = self.colList[parentKey];
-                expression += self.getKvPair(col, "!=", data[key]);
+                expression += self.getKvPair(parentKey, "!=", data[key]);
             }
             else if(conditionArray[1] == 'in')
             {
-                var col = self.colList[parentKey];
                 var inList = data[key];
                 var inListCount = 0;
                 var inStr = "(";
@@ -257,7 +395,7 @@ Table.prototype.condition = function(data, parentKey)
                     inListCount++;
                 }
                 inStr += ")";
-                expression += self.getKvPair(col, "in", inStr);
+                expression += self.getKvPair(parentKey, "in", inStr);
             }
             conditionStr += expression;
         }
@@ -271,11 +409,20 @@ Table.prototype.condition = function(data, parentKey)
  * @param col
  * @param value
  */
-Table.prototype.getKvPair = function(col, op, value)
+Table.prototype.getKvPair = function(colName, op, value)
 {
+    var self = this;
+    var col = self.colList[colName];
     if(col == undefined)
     {
-        return "";
+        if(colName == 'rownum')
+        {
+            return "rownum " + op + " " + value;
+        }
+        else
+        {
+            return "";
+        }
     }
     else
     {
@@ -283,6 +430,19 @@ Table.prototype.getKvPair = function(col, op, value)
         if(col.getType() == 'int' || col.getType() == "bigint")
         {
             exp += value;
+        }
+        else if(col.getType() == 'date')
+        {
+            var str = '';
+            if(self.db.type == prop.dbType.mysql)
+            {
+                str += "'" + dateUtil.toString(value) + "'";
+            }
+            else if(self.db.type == prop.dbType.oracle)
+            {
+                str += "to_date('" + value + "', 'yyyy-MM-dd HH24:mi:ss')";
+            }
+            exp += str;
         }
         else
         {
@@ -297,50 +457,62 @@ Table.prototype.getKvPair = function(col, op, value)
  * @param data
  * @param cb
  */
-Table.prototype.find = function(data, columns)
+Table.prototype.find = function(data, columns, options)
 {
     var self = this;
-    var sql = "select ";
-    var keyStr = '';
-    var i = 0;
-    if(columns._id == undefined)
+    if(self.db.type == prop.dbType.mongodb)
     {
-        columns._id = 1;
+        return self.col.find(data, columns);
     }
-    if(columns.id == undefined)
+    else
     {
-        columns.id = 1;
-    }
-    for(var key in columns)
-    {
-        //如果没有相关的列，则直接忽略
-        if(self.colList[key] == undefined)
+        var sql = "select ";
+        var keyStr = '';
+        var i = 0;
+        if(columns._id == undefined)
         {
-            continue;
+            columns._id = 1;
         }
-        if(i > 0)
+        if(columns.id == undefined)
         {
-            keyStr += ",";
+            columns.id = 1;
         }
-        if(columns[key] == 1)
+        for(var key in columns)
         {
-            keyStr += key;
+            //如果没有相关的列，则直接忽略
+            var tCol = self.colList[key];
+            if(tCol == undefined)
+            {
+                continue;
+            }
+            if(i > 0)
+            {
+                keyStr += ",";
+            }
+            if(columns[key] == 1)
+            {
+                keyStr += key;
+            }
+            i++;
         }
-        i++;
-    }
-    if(i == 1)  //用户未指定列，则选择所有的列
-    {
-        keyStr = "*";
-    }
-    sql += keyStr;
-    sql += " from " + self.name;
+        if(i == 1)  //用户未指定列，则选择所有的列
+        {
+            keyStr = "*";
+        }
+        sql += keyStr;
+        sql += " from " + self.name;
 
-    var conditionStr = self.condition(data);
-    if(conditionStr.length > 0)
-    {
-        sql += " where " + conditionStr;
+        var conditionStr = self.condition(data);
+        if(conditionStr.length > 0)
+        {
+            sql += " where " + conditionStr;
+        }
+        if(options == undefined)
+        {
+            options = [];
+        }
+        return new DbCursor(self, options, sql);
     }
-    return new DbCursor(self, sql);
 };
 
 /**
@@ -349,17 +521,27 @@ Table.prototype.find = function(data, columns)
  * @param option
  * @param cb
  */
-Table.prototype.remove = function(condtion, option, cb)
+Table.prototype.remove = function(condtion, options, cb)
 {
     var self = this;
-    var sql = "delete from " + self.name;
-    var conditionStr = self.condition(condtion);
-    if(conditionStr.length > 0)
+    if(self.db.type == prop.dbType.mongodb)
     {
-        sql += " where " + conditionStr;
+        self.col.remove(condtion, options, cb);
     }
-    console.log(sql);
-    self.db.getConn().query(sql, cb);
+    else
+    {
+        var sql = "delete from " + self.name;
+        var conditionStr = self.condition(condtion);
+        if(conditionStr.length > 0)
+        {
+            sql += " where " + conditionStr;
+        }
+        log.info(sql);
+        var conn = self.db.pool.getConn();
+        conn.execute(sql, options, function(err, data){
+            cb(err, data);
+        });
+    }
 };
 
 module.exports = Table;

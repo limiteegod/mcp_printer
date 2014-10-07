@@ -1,8 +1,6 @@
 var async = require('async');
-var cmdFactory = require("./CmdFactory.js");
 var digestUtil = require("../util/DigestUtil.js");
 var db = require('../config/Database.js');
-var printMgDb = require('../config/PrintMgDb.js');
 
 var MongoControl = function(){};
 

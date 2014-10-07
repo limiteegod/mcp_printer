@@ -3,7 +3,6 @@ var querystring = require('querystring');
 var crypto = require('crypto');
 var prop = require('../config/Prop.js');
 var digestUtil = require('./DigestUtil.js');
-var printMgDb = require('../config/PrintMgDb.js');
 var options = prop.platform.site;
 var PlatInterUtil = function(){};
 

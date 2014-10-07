@@ -7,7 +7,8 @@ var async = require('async');
 var platInterUtil = require('./app/util/PlatInterUtil.js');
 var zzcInterUtil = require('./app/util/ZzcInterUtil.js');
 var digestUtil = require('./app/util/DigestUtil.js');
-var printMgDb = require('./app/config/PrintMgDb.js');
+var log = require('./app/util/McpLog.js');
+var dc = require('./app/config/DbCenter.js');
 var prop = require('./app/config/Prop.js');
 var zzc = prop.zzc;
 
@@ -34,15 +35,8 @@ Printer.prototype.start = function()
         //connect mdb
         function(cb)
         {
-            printMgDb.connect(function(err, db){
+            dc.init(function(err, db){
                 cb(err);
-            });
-        },
-        //check mdb data
-        function(cb)
-        {
-            printMgDb.check(function(){
-                cb(null);
             });
         },
         //start get tickets from plat
@@ -54,7 +48,7 @@ Printer.prototype.start = function()
         //start print
         function(cb)
         {
-            self.startPrintJob();
+            //self.startPrintJob();
             cb(null);
         }
     ], function (err, result) {
@@ -72,20 +66,20 @@ Printer.prototype.start = function()
 Printer.prototype.saveTickets = function(tickets)
 {
     var self = this;
-    var ticketCol = printMgDb.get("ticket");
+    var ticketCol = dc.mg.get("ticket");
     for(var key in tickets)
     {
         var ticket = tickets[key];
         ticket._id = ticket.id; //rewrite the mgdb id
         ticket.status = prop.ticketStatus.received;
         var name = ticket.gameCode + "_" + ticket.playTypeCode + "_" + ticket.betTypeCode;
-        var col = printMgDb.get(name);
-        col.insert(ticket, function(err, data){
+        var col = dc.mg.pool.getConn().conn.collection(name);
+        col.save(ticket, [], function(err, data){
         });
-        ticketCol.insert(ticket, function(err, data){
+        ticketCol.save(ticket, [], function(err, data){
         });
     }
-}
+};
 
 Printer.prototype.getTicketFromPlat = function()
 {
@@ -101,8 +95,10 @@ Printer.prototype.getTicketFromPlat = function()
                     {
                         var bodyNode = {size:10};
                         self.plat("P12", bodyNode, function(backMsgNode){
+                            log.info(backMsgNode);
                             var backBodyStr = digestUtil.check(backMsgNode.head, self.key, backMsgNode.body);
                             var backBodyNode = JSON.parse(backBodyStr);
+                            log.info(backBodyNode);
                             //if has next page, continue get tickets
                             hasNextPage = backBodyNode.pi.hasNextPage;
                             cb(null, backBodyNode.rst);
@@ -116,9 +112,10 @@ Printer.prototype.getTicketFromPlat = function()
                             var order = orders[key];
                             var bodyNode = {orderId:order.orderId};
                             self.plat("P06", bodyNode, function(backMsgNode){
+                                log.info(backMsgNode);
                                 var backBodyStr = digestUtil.check(backMsgNode.head, self.key, backMsgNode.body);
+                                log.info(backBodyStr);
                                 var backBodyNode = JSON.parse(backBodyStr);
-                                //console.log(backBodyNode);
                                 self.saveTickets(backBodyNode.tickets);
                             });
                         }

@@ -1,0 +1,66 @@
+doctype html
+html(lang="en")
+    head
+        include ../includes/script.jade
+        script(type='text/javascript').
+            KISSY.use("io,node,json,vs-grid-table,vs-pagebar,vs-round-input,vs-window",
+                function(S, Io, Node, Json, VsGridTable, VsPagebar, VsRoundInput, VsWindow){
+
+                //绑定事件
+                Node.one("#success").on("click", function(){
+                     var html = '<div style="text-align:left;font-size:18px;margin-left:10px;margin-top:20px;">确定要直接通知平台出票成功吗？</div>';
+                     var win = new VsWindow("#tWin", {title:"出票确认", width:400, height:200, html:html, controlBt:[
+                        {name:'确定', cb:null}, {name:'取消', cb:null}
+                     ]});
+                });
+
+                //绑定事件
+                Node.one("#failure").on("click", function(){
+                     var html = '<div style="text-align:left;font-size:18px;margin-left:10px;margin-top:20px;">确定要直接通知平台出票失败吗？</div>';
+                     var win = new VsWindow("#tWin", {title:"出票确认", width:400, height:200, html:html, controlBt:[
+                        {name:'确定', cb:null}, {name:'取消', cb:null}
+                     ]});
+                });
+            });
+    body
+        .bodyDiv
+            #tWin.container
+            .clearfix(style="margin-top:8px")
+                .vs_grid_plain(style="width:100px;text-align:right;") 彩票id:
+                .vs_grid_plain(style="margin-left:8px;")=rst._id
+            .clearfix(style="margin-top:8px")
+                .vs_grid_plain(style="width:100px;text-align:right;") 出票id:
+                .vs_grid_plain(style="margin-left:8px;")=rst.zzcId
+            .clearfix(style="margin-top:8px")
+                .vs_grid_plain(style="width:100px;text-align:right;") 游戏:
+                .vs_grid_plain(style="margin-left:8px;")=rst.game.name
+            .clearfix(style="margin-top:8px")
+                .vs_grid_plain(style="width:100px;text-align:right;") 期次:
+                .vs_grid_plain(style="margin-left:8px;")=rst.termCode
+            .clearfix(style="margin-top:8px")
+                .vs_grid_plain(style="width:100px;text-align:right;") 金额:
+                .vs_grid_plain(style="margin-left:8px;")=rst.amount
+                    |(分)
+            .clearfix(style="margin-top:8px")
+                .vs_grid_plain(style="width:100px;text-align:right;") 玩法:
+                .vs_grid_plain(style="margin-left:8px;")=rst.game[rst.playTypeCode].name
+            .clearfix(style="margin-top:8px")
+                .vs_grid_plain(style="width:100px;text-align:right;") 投注方式:
+                .vs_grid_plain(style="margin-left:8px;")=rst.game[rst.playTypeCode][rst.betTypeCode].name
+            .clearfix(style="margin-top:8px")
+                .vs_grid_plain(style="width:100px;text-align:right;") 平台号码:
+                .vs_grid_plain(style="margin-left:8px;")=rst.numbers
+            .clearfix(style="margin-top:8px")
+                .vs_grid_plain(style="width:100px;text-align:right;") 出票号码:
+                .vs_grid_plain(style="margin-left:8px;")=rst.ball
+            .clearfix(style="margin-top:8px")
+                .vs_grid_plain(style="width:100px;text-align:right;") 状态:
+                .vs_grid_plain(style="margin-left:8px;")=rst.status.des
+            .clearfix(style="margin-top:8px")
+                .vs_grid_plain(style="width:100px;text-align:right;") 出票返回:
+                .vs_grid_plain(style="margin-left:8px;")=rst.zzcMsg
+            .clearfix(style="margin-top:8px")
+                .vs_grid_plain(style="width:100px;text-align:right;") &nbsp;
+                .vs_grid_plain(style="margin-left:8px;")
+                    input(type="button", value="确定成功", id="success", tId=rst._id)
+                    input(type="button", value="确定失败", id="failure", tId=rst._id)

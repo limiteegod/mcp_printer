@@ -10,9 +10,8 @@ var digestUtil = require("./app/util/DigestUtil.js");
 var net = require('net');
 var osUtil = require('./app/util/OsUtil.js');
 var monitorFactory = require('./app/common/MonitorFactory.js');
-var db = require('./app/config/Database.js');
+var dc = require('./app/config/DbCenter.js');
 var prop = require('./app/config/Prop.js');
-var printMgDb = require('./app/config/PrintMgDb.js');
 
 //app.use(express.logger());
 
@@ -28,15 +27,8 @@ App.prototype.start = function()
         //connect mdb
         function(cb)
         {
-            printMgDb.connect(function(err, db){
+            dc.init(function(err, db){
                 cb(err);
-            });
-        },
-        //check mdb data
-        function(cb)
-        {
-            printMgDb.check(function(){
-                cb(null);
             });
         },
         //start web
@@ -109,41 +101,9 @@ App.prototype.startWeb = function()
 
     //zzc print notify
     app.post("/main/zzc_notify.htm", function(req, res){
-
     });
 
-    app.post("/main/interface.htm", function(req, res){
-        var message = req.body.message;
-        console.log(message);
-        var msgNode = JSON.parse(message);
-        var headNode = msgNode.head;
-        var bodyStr = msgNode.body;
-        console.log(bodyStr);
-        cmdFactory.handle(headNode, bodyStr, function(err, bodyNode){
-            var key;
-            if(err)
-            {
-                key = digestUtil.getEmptyKey();
-                headNode.digestType = "3des-empty";
-                if(bodyNode == undefined)
-                {
-                    bodyNode = {};
-                }
-                bodyNode.code = err.code;
-                bodyNode.description = err.description;
-            }
-            else
-            {
-                bodyNode.code = errCode.E0000.code;
-                bodyNode.description = errCode.E0000.description;
 
-                key = headNode.key;
-                headNode.key = undefined;
-            }
-            var decodedBodyStr = digestUtil.generate(headNode, key, JSON.stringify(bodyNode));
-            res.json({head:headNode, body:decodedBodyStr});
-        });
-    });
 
     self.io.on('connection', function(socket){
 
@@ -162,7 +122,7 @@ App.prototype.startWeb = function()
         });
     });
 
-    httpServer.listen(9080);
+    httpServer.listen(9082);
 };
 
 new App(io).start();

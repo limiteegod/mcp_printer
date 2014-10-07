@@ -37,6 +37,9 @@ KISSY.add("vs-window", ["./node", "./base"], function(S, require) {
         },
         controlBt:{
             value:[{name:'确定', cb:null}, {name:'取消', cb:null}, {name:'关闭', cb:null}]
+        },
+        html: {
+            value:''
         }
     };
 
@@ -50,7 +53,7 @@ KISSY.add("vs-window", ["./node", "./base"], function(S, require) {
             var bodyHeight = window.innerHeight;
             var left = (bodyWidth - self.get("width"))/2;
             var top = (bodyHeight - self.get("height"))/2;
-            var html = self.container.html();
+            var html = self.get("html");
             self.container.html("");
             self.widowDiv = Node.one('<div class="vs_div_talbe_border" style="position: absolute;left:' + left + 'px;top:' + top + 'px;width:' + self.get("width") + 'px"></div>');
             self.widowDiv.append('<div class="clearfix"><div class="vs_div_table_border_head_left"></div><div class="vs_div_table_border_head"></div><div class="vs_div_table_border_head_right"></div></div>');
@@ -67,11 +70,18 @@ KISSY.add("vs-window", ["./node", "./base"], function(S, require) {
             var cWidth = self.get("width") - 10;
             var cHeight = self.get("height") - 10;
             var cTable = Node.one('<div style="overflow-x: hidden;position:absolute;left:5px;top:26px;width:' + cWidth + 'px;height:' + (cHeight - 25 - 32) + 'px;"></div>');
-            var title = Node.one('<div style="overflow-x: hidden;border-bottom:1px solid #28afae;left:5px;top:7px;position:absolute;width:' + cWidth + 'px;height:18px;">&nbsp;' + self.get("title") + '</div>');
-            var frame = Node.one('<iframe id="' + wId + '" frameborder="no" border="0" style="width:' + cWidth + 'px;height:' + (cHeight - 25) + 'px;"></iframe>');
+            var title = Node.one('<div style="overflow-x: hidden;text-align:left;border-bottom:1px solid #28afae;left:5px;top:7px;position:absolute;width:' + cWidth + 'px;height:18px;">&nbsp;' + self.get("title") + '</div>');
             var bottomField = Node.one('<div style="overflow-x: hidden;border-top:1px solid #28afae;left:5px;top:' + (cHeight - 30) + 'px;position:absolute;width:' + cWidth + 'px;height:28px;"></div>');
-            frame.attr("src", CurSite.getAbsolutePath(self.get("url")) + "&frameId=" + wId);
-            cTable.append(frame);
+            if(html.length == 0)
+            {
+                var frame = Node.one('<iframe id="' + wId + '" frameborder="no" border="0" style="width:' + cWidth + 'px;height:' + (cHeight - 25) + 'px;"></iframe>');
+                frame.attr("src", CurSite.getAbsolutePath(self.get("url")) + "&frameId=" + wId);
+                cTable.append(frame);
+            }
+            else
+            {
+                cTable.append(html);
+            }
             self.widowDiv.append(title);
             self.widowDiv.append(cTable);
             self.widowDiv.append(bottomField);

@@ -65,6 +65,15 @@ html(lang="en")
                         var win = new VsWindow("#tWin", {title:"票据详情", width:500, height:400, url:url});
                     });
                 });
+
+                //绑定事件
+                Node.all("input.man").each(function(item){
+                    item.on("click", function(){
+                        var tId = Node.one(this).attr("tId");
+                        var url = "monitor_manTicket.html?id=" + tId;
+                        window.open(url);
+                    });
+                });
             });
     body
         .bodyDiv
@@ -118,4 +127,5 @@ html(lang="en")
                                 td=val.zzcMsg
                                 td
                                     input(type="button", value="详情", class="detail", tId=val.id)
+                                    input(type="button", value="管理", class="man", tId=val.id)
             #bar.container(style="width:600px;")

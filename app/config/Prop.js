@@ -21,28 +21,16 @@ exports.target = target;
 var zzc = {};
 if(target == 'dev' || target == 'home')
 {
-    //mysql连接
-    var mysql = {'host':'localhost', 'user':'root', 'password':'123456', 'port':3306, 'database':'node'};
-    exports.mysql = mysql;
-
-    var mcpdb = {'host':'localhost', 'user':'root', 'password':'123456', 'port':3306, 'database':'mcp'};
-    exports.mcpdb = mcpdb;
-
-    //mongodb的地址
-    var mongo = {'url':'mongodb://127.0.0.1:27017/print'};
-    exports.mongo = mongo;
-
     //平台地址
     var platform = {};
     platform.site = {
         hostname: '127.0.0.1',
-        port: 8080,
+        port: 9081,
         path: '/mcp-filter/main/interface.htm',
         method: 'POST'
     };
     platform.ver = "s.1.01";
     exports.platform = platform;
-
 
     zzc.site = {
         hostname: '122.0.68.5',
@@ -75,14 +63,6 @@ if(target == 'test')
 }
 else if(target == 'run')
 {
-    //mysql连接
-    var mysql = {'host':'192.168.222.234', 'user':'root', 'password':'0okmnhy6', 'port':3306, 'database':'node'};
-    exports.mysql = mysql;
-
-    //mongodb的地址
-    var mongo = {'url':'mongodb://192.168.222.233:27017/test'};
-    exports.mongo = mongo;
-
     //平台地址
     var platform = {};
     platform.site = {
@@ -96,12 +76,6 @@ else if(target == 'run')
 }
 
 exports.zzc = zzc;
-
-//if user hasn't operation in half a hour, the key will be expired.
-exports.loginExpiredSeconds = 30*60;
-
-//machine status
-exports.machineStatus = {"running":1, "unknown":-1, "stopped":0};
 
 //ticket status
 exports.ticketStatus = {"received":1000, "send":2000, "send_failure":2500, "send_success":2800, "success":3000, "failure":4000};
@@ -190,14 +164,18 @@ exports.getEnumById = function(name, id)
 //game type
 exports.gameType = {'normal':1, 'gaopin':2, 'jingcai':3};
 
-//station type
-exports.stationType = {'channel':2, 'center':1};
 
-//station status
-exports.stationStatus = {'open':0, 'close':1};
+exports.dbType = {"mysql":0, "oracle":1, "mongodb":2};
+exports.dbTypeArray = [{id:0, code:'mysql', des:"mysql"},
+    {id:1, code:'oracle', des:"oracle"},
+    {id:2, code:'mongodb', des:"mongodb"}];
 
-//station game status
-exports.stationGameStatus = {'open':0, 'close':1};
+//config db basic type
+var dbs = [{
+    config:{'url':'mongodb://127.0.0.1:27017/print'},
+    type:exports.dbType.mongodb
+}];
+exports.dbs = dbs;
 
 module.exports = exports;
 

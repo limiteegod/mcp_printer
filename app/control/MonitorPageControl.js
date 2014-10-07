@@ -1,6 +1,5 @@
-var db = require('../config/Database.js');
+var dc = require('../config/DbCenter.js');
 var digestUtil = require("../util/DigestUtil.js");
-var printMgDb = require('../config/PrintMgDb.js');
 var prop = require('../config/Prop.js');
 
 var MonitorPageControl = function(){};
@@ -29,7 +28,28 @@ MonitorPageControl.prototype.detailTicket = function(headNode, bodyNode, cb)
 {
     var self = this;
     var backBodyNode = {title:"client"};
-    var ticketCol = printMgDb.get("ticket");
+    var ticketCol = dc.mg.get("ticket");
+    ticketCol.findOne({_id:bodyNode.id}, {}, function(err, data){
+        if(data)
+        {
+            data.status = prop.getEnumById("ticketStatusArray", data.status);
+            data.game = prop.getGameInfo(data.gameCode);
+            console.log(data);
+            backBodyNode.rst = data;
+        }
+        else
+        {
+            backBodyNode.rst = {};
+        }
+        cb(null, backBodyNode);
+    });
+};
+
+MonitorPageControl.prototype.manTicket = function(headNode, bodyNode, cb)
+{
+    var self = this;
+    var backBodyNode = {title:"票据管理"};
+    var ticketCol = dc.mg.get("ticket");
     ticketCol.findOne({_id:bodyNode.id}, {}, function(err, data){
         if(data)
         {
@@ -85,7 +105,7 @@ MonitorPageControl.prototype.viewTicket = function(headNode, bodyNode, cb)
     backBodyNode.ticketStatusArray = prop.ticketStatusArray;
     backBodyNode.cond = cond;
     backBodyNode.games = prop.games;
-    var ticketCol = printMgDb.get("ticket");
+    var ticketCol = dc.mg.get("ticket");
     var cursor = ticketCol.find(cond, {}).sort(sort).skip(skip).limit(limit);
     cursor.toArray(function(err, data){
         for(var key in data)
