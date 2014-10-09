@@ -6,12 +6,14 @@ var io = require('socket.io')(httpServer);
 var cmdFactory = require("./app/control/CmdFactory.js");
 var pageControl = require("./app/control/PageControl.js");
 var errCode = require("./app/config/ErrCode.js");
-var digestUtil = require("./app/util/DigestUtil.js");
-var net = require('net');
-var osUtil = require('./app/util/OsUtil.js');
 var monitorFactory = require('./app/common/MonitorFactory.js');
 var dc = require('./app/config/DbCenter.js');
 var prop = require('./app/config/Prop.js');
+
+var esut = require('easy_util');
+var digestUtil = esut.digestUtil;
+var log = esut.log;
+
 
 //app.use(express.logger());
 
@@ -63,7 +65,7 @@ App.prototype.startWeb = function()
     //route requests
     app.use(app.router);
     //public文件夹下面的文件，都暴露出来，客户端访问的时候，不需要使用public路径
-    app.use(express.static(__dirname + '/public'));
+    app.use(express.static('/data/app/node_kissy/public'));
 
     app.configure('development', function(){
         app.use(express.errorHandler({dumpExceptions: true, showStack: true}));
@@ -99,10 +101,25 @@ App.prototype.startWeb = function()
         }
     });
 
+    app.post("/mcp-filter/main/interface.htm", function(req, res){
+        var message = req.body.message;
+        self.handle(message, function(backMsgNode){
+            res.json(backMsgNode);
+            log.info(backMsgNode);
+        });
+    });
+
+    app.get("/mcp-filter/main/interface.htm", function(req, res){
+        var message = req.query.message;
+        self.handle(message, function(backMsgNode){
+            res.json(backMsgNode);
+            log.info(backMsgNode);
+        });
+    });
+
     //zzc print notify
     app.post("/main/zzc_notify.htm", function(req, res){
     });
-
 
 
     self.io.on('connection', function(socket){
@@ -123,6 +140,49 @@ App.prototype.startWeb = function()
     });
 
     httpServer.listen(9082);
+};
+
+App.prototype.handle = function(message, cb)
+{
+    var self = this;
+    log.info(message);
+    try {
+        var msgNode = JSON.parse(message);
+        var headNode = msgNode.head;
+        var bodyStr = msgNode.body;
+        cmdFactory.handle(headNode, bodyStr, function(err, bodyNode) {
+            var key = headNode.key;
+            headNode.key = undefined;
+            if(key == undefined)
+            {
+                key = digestUtil.getEmptyKey();
+                if(headNode.digestType == '3des')
+                {
+                    headNode.digestType = "3des-empty";
+                }
+            }
+            if (bodyNode == undefined) {
+                bodyNode = {};
+            }
+            if (err) {
+                bodyNode.repCode = err.repCode;
+                bodyNode.description = err.description;
+            }
+            else
+            {
+                bodyNode.repCode = errCode.E0000.repCode;
+                bodyNode.description = errCode.E0000.description;
+            }
+            log.info(bodyNode);
+            var decodedBodyStr = digestUtil.generate(headNode, key, JSON.stringify(bodyNode));
+            cb({head: headNode, body: decodedBodyStr});
+        });
+    }
+    catch (err)
+    {
+        cb({head:{cmd:'E01'}, body:JSON.stringify(errCode.E2058)});
+        return;
+    }
 };
 
 new App(io).start();

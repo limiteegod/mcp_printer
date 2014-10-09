@@ -1,4 +1,7 @@
+var esdb = require('easy_db');
+
 var target = 'dev';
+var exports = {};
 
 var argv = process.argv;
 var kvs = {};
@@ -164,16 +167,18 @@ exports.getEnumById = function(name, id)
 //game type
 exports.gameType = {'normal':1, 'gaopin':2, 'jingcai':3};
 
-
-exports.dbType = {"mysql":0, "oracle":1, "mongodb":2};
-exports.dbTypeArray = [{id:0, code:'mysql', des:"mysql"},
-    {id:1, code:'oracle', des:"oracle"},
-    {id:2, code:'mongodb', des:"mongodb"}];
+//暂时支持3种密钥来源
+exports.digestFromType = {"NONE":0, "DB":1, "CACHE":2};
+exports.digestFromTypeArray = [
+    {id:0, code:'NONE', des:"无"},
+    {id:1, code:'DB', des:"数据库"},
+    {id:2, code:'CACHE', des:"缓存"}
+];
 
 //config db basic type
 var dbs = [{
     config:{'url':'mongodb://127.0.0.1:27017/print'},
-    type:exports.dbType.mongodb
+    type:esdb.prop.dbType.mongodb
 }];
 exports.dbs = dbs;
 

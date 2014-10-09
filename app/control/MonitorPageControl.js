@@ -116,7 +116,6 @@ MonitorPageControl.prototype.viewTicket = function(headNode, bodyNode, cb)
         }
         backBodyNode.rst = data;
 
-
         backBodyNode.count = cursor.count(function(err, count){
             backBodyNode.count = count;
             cb(null, backBodyNode);

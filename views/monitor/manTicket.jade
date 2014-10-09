@@ -6,11 +6,20 @@ html(lang="en")
             KISSY.use("io,node,json,vs-grid-table,vs-pagebar,vs-round-input,vs-window",
                 function(S, Io, Node, Json, VsGridTable, VsPagebar, VsRoundInput, VsWindow){
 
+                var tId = Node.one("#tId").val();
+
                 //绑定事件
                 Node.one("#success").on("click", function(){
                      var html = '<div style="text-align:left;font-size:18px;margin-left:10px;margin-top:20px;">确定要直接通知平台出票成功吗？</div>';
                      var win = new VsWindow("#tWin", {title:"出票确认", width:400, height:200, html:html, controlBt:[
-                        {name:'确定', cb:null}, {name:'取消', cb:null}
+                        {name:'确定', cb:function(){
+                            var bodyNode = {id:tId};
+                            CurSite.sendUnDigest(Io, Json, "AD01", bodyNode, function(err, data){
+                                console.log(tId);
+                                console.log(data);
+                            });
+                            return true;
+                        }}, {name:'取消', cb:null}
                      ]});
                 });
 
@@ -23,6 +32,7 @@ html(lang="en")
                 });
             });
     body
+        input(type="hidden", id="tId", value=rst._id)
         .bodyDiv
             #tWin.container
             .clearfix(style="margin-top:8px")
