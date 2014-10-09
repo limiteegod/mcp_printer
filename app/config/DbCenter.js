@@ -51,7 +51,7 @@ DbCenter.prototype._checkMg = function(cb)
     var self = this;
     var adminTable = self.mg.get("admin");
     var admin = {_id:"admin", password:"123456"};
-    adminTable.findOne({_id:admin._id}, [], function(err, data){
+    adminTable.findOne({_id:admin._id}, {}, [], function(err, data){
         if(err)
         {
             cb(err);

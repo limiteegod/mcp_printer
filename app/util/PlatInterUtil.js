@@ -1,8 +1,9 @@
 var http = require('http');
 var querystring = require('querystring');
-var crypto = require('crypto');
 var prop = require('../config/Prop.js');
-var digestUtil = require('./DigestUtil.js');
+var esut = require('easy_util');
+var log = esut.log;
+var digestUtil = esut.digestUtil;
 var options = prop.platform.site;
 var PlatInterUtil = function(){};
 
@@ -38,7 +39,10 @@ PlatInterUtil.prototype.get= function(userId, userType, channelCode, userKey, cm
         });
 
         res.on('end', function(){
-            cb(JSON.parse(data));
+            var msgNode = JSON.parse(data);
+            var bodyStr = digestUtil.check(msgNode.head, userKey, msgNode.body);
+            msgNode.body = JSON.parse(bodyStr);
+            cb(null, msgNode);
         });
     });
     req.setTimeout(20000, function(){
@@ -49,6 +53,13 @@ PlatInterUtil.prototype.get= function(userId, userType, channelCode, userKey, cm
     });
     req.write(post_data, "utf8");
     req.end();
+};
+
+PlatInterUtil.prototype.getSimple = function(cmd, body, cb)
+{
+    var self = this;
+    var station = prop.station;
+    self.get(station.userId, station.userType, station.channelCode, station.key, cmd, body, cb);
 };
 
 var platInterUtil = new PlatInterUtil();

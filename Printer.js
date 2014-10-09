@@ -6,8 +6,11 @@ var moment = require('moment');
 var async = require('async');
 var platInterUtil = require('./app/util/PlatInterUtil.js');
 var zzcInterUtil = require('./app/util/ZzcInterUtil.js');
-var digestUtil = require('./app/util/DigestUtil.js');
-var log = require('./app/util/McpLog.js');
+
+var esut = require('easy_util');
+var digestUtil = esut.digestUtil;
+var log = esut.log;
+
 var dc = require('./app/config/DbCenter.js');
 var prop = require('./app/config/Prop.js');
 var zzc = prop.zzc;
@@ -15,16 +18,6 @@ var zzc = prop.zzc;
 
 var Printer = function(){
     var self = this;
-    self.userId = 'C0001';
-    self.channelCode = 'C0001';
-    self.userType = 2;
-    self.key = 'cad6011f5f174a359d9a36e06aada07e';
-};
-
-Printer.prototype.plat = function(cmd, bodyNode, cb)
-{
-    var self = this;
-    platInterUtil.get(self.userId, self.userType, self.channelCode, self.key, cmd, bodyNode, cb);
 };
 
 
@@ -94,10 +87,8 @@ Printer.prototype.getTicketFromPlat = function()
                     function(cb)
                     {
                         var bodyNode = {size:10};
-                        self.plat("P12", bodyNode, function(backMsgNode){
-                            log.info(backMsgNode);
-                            var backBodyStr = digestUtil.check(backMsgNode.head, self.key, backMsgNode.body);
-                            var backBodyNode = JSON.parse(backBodyStr);
+                        platInterUtil.getSimple("P12", bodyNode, function(err, backMsgNode){
+                            var backBodyNode = backMsgNode.body;
                             log.info(backBodyNode);
                             //if has next page, continue get tickets
                             hasNextPage = backBodyNode.pi.hasNextPage;
@@ -111,11 +102,9 @@ Printer.prototype.getTicketFromPlat = function()
                         {
                             var order = orders[key];
                             var bodyNode = {orderId:order.orderId};
-                            self.plat("P06", bodyNode, function(backMsgNode){
-                                log.info(backMsgNode);
-                                var backBodyStr = digestUtil.check(backMsgNode.head, self.key, backMsgNode.body);
-                                log.info(backBodyStr);
-                                var backBodyNode = JSON.parse(backBodyStr);
+                            platInterUtil.getSimple("P06", bodyNode, function(err, backMsgNode){
+                                var backBodyNode = backMsgNode.body;
+                                log.info(backBodyNode);
                                 self.saveTickets(backBodyNode.tickets);
                             });
                         }

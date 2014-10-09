@@ -35,6 +35,10 @@ if(target == 'dev' || target == 'home')
     platform.ver = "s.1.01";
     exports.platform = platform;
 
+
+    var station = {userId:'C0001', channelCode:'C0001', userType:2, key:'cad6011f5f174a359d9a36e06aada07e'};
+    exports.station = station;
+
     zzc.site = {
         hostname: '122.0.68.5',
         port: 8046,
@@ -81,14 +85,16 @@ else if(target == 'run')
 exports.zzc = zzc;
 
 //ticket status
-exports.ticketStatus = {"received":1000, "send":2000, "send_failure":2500, "send_success":2800, "success":3000, "failure":4000};
+exports.ticketStatus = {"received":1000, "send":2000, "send_failure":2500, "send_success":2800, "success":3000,
+    "failure":4000, 'man':5000};
 
 //ticket status
 exports.ticketStatusArray = [{id:1000, code:'received', des:"已经接收"}, {id:2000, code:'send', des:"正在发送"},
     {id:2500, code:'send_failure', des:"发送失败"},
     {id:2800, code:'send_success', des:"发送成功"},
     {id:3000, code:'success', des:"出票成功"},
-    {id:4000, code:'failure', des:"出票失败"}];
+    {id:4000, code:'failure', des:"出票失败"},
+    {id:5000, code:'man', des:"手工处理"}];
 
 exports.games =
 [

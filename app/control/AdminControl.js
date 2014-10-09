@@ -6,12 +6,13 @@ var pageUtil = esut.pageUtil;
 var dc = require('../config/DbCenter.js');
 var ec = require('../config/ErrCode.js');
 var prop = require('../config/Prop.js');
+var paltInterUtil = require('../util/PlatInterUtil.js');
 
 var AdminControl = function(){
     var self = this;
     self.cmd = {'AD01':0, 'AD02':1, 'AD03':2, 'AD04':3};
     self.cmdArray = [{id:0, code:'AD01', fromType:prop.digestFromType.CACHE, des:"直接出票成功"},
-        {id:1, code:'AD02', fromType:prop.digestFromType.CACHE, des:'添加地域'},
+        {id:1, code:'AD02', fromType:prop.digestFromType.CACHE, des:'清空表'},
         {id:2, code:'AD03', fromType:prop.digestFromType.CACHE, des:'添加联赛'},
         {id:3, code:'AD04', fromType:prop.digestFromType.CACHE, des:'修改联赛'}];
 };
@@ -95,7 +96,16 @@ AdminControl.prototype.checkAD04 = function(user, headNode, bodyNode, cb)
 AdminControl.prototype.handleAD01 = function(user, headNode, bodyNode, cb)
 {
     var backBodyNode = {};
-    cb(null, backBodyNode);
+    var platBody = {ticketId:bodyNode.id, code:0};
+    paltInterUtil.getSimple("P02", platBody, function(err, data){
+        var ticketCol = dc.mg.get("ticket");
+        ticketCol.update({_id:bodyNode.id}, {$set:{platCode:data.body.repCode, platDes:data.body.description,
+        status:prop.ticketStatus.man}},
+        [], function(err, data){
+            log.info(data);
+            cb(null, backBodyNode);
+        });
+    });
 };
 
 /**
@@ -108,16 +118,9 @@ AdminControl.prototype.handleAD01 = function(user, headNode, bodyNode, cb)
 AdminControl.prototype.handleAD02 = function(user, headNode, bodyNode, cb)
 {
     var backBodyNode = {};
-    var areaTable = dc.main.get("area");
-    areaTable.save(bodyNode.area, [], function(err, data){
-        if(err)
-        {
-            cb(ec.E9999);
-        }
-        else
-        {
-            cb(err, backBodyNode);
-        }
+    var ticketCol = dc.mg.get("ticket");
+    ticketCol.drop(function(err, data){
+        cb(err, backBodyNode);
     });
 };
 

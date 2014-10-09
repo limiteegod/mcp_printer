@@ -1,5 +1,7 @@
-var db = require('../config/Database.js');
-var digestUtil = require("../util/DigestUtil.js");
+var esut = require('easy_util');
+var log = esut.log;
+var digestUtil = esut.digestUtil;
+var pageUtil = esut.pageUtil;
 
 var TestPageControl = function(){};
 

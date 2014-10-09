@@ -1,5 +1,8 @@
 var dc = require('../config/DbCenter.js');
-var digestUtil = require("../util/DigestUtil.js");
+var esut = require('easy_util');
+var log = esut.log;
+var digestUtil = esut.digestUtil;
+var pageUtil = esut.pageUtil;
 var prop = require('../config/Prop.js');
 
 var MonitorPageControl = function(){};
@@ -29,7 +32,7 @@ MonitorPageControl.prototype.detailTicket = function(headNode, bodyNode, cb)
     var self = this;
     var backBodyNode = {title:"client"};
     var ticketCol = dc.mg.get("ticket");
-    ticketCol.findOne({_id:bodyNode.id}, {}, function(err, data){
+    ticketCol.findOne({_id:bodyNode.id}, {}, [], function(err, data){
         if(data)
         {
             data.status = prop.getEnumById("ticketStatusArray", data.status);
@@ -50,7 +53,7 @@ MonitorPageControl.prototype.manTicket = function(headNode, bodyNode, cb)
     var self = this;
     var backBodyNode = {title:"票据管理"};
     var ticketCol = dc.mg.get("ticket");
-    ticketCol.findOne({_id:bodyNode.id}, {}, function(err, data){
+    ticketCol.findOne({_id:bodyNode.id}, {}, [], function(err, data){
         if(data)
         {
             data.status = prop.getEnumById("ticketStatusArray", data.status);
@@ -69,44 +72,12 @@ MonitorPageControl.prototype.manTicket = function(headNode, bodyNode, cb)
 MonitorPageControl.prototype.viewTicket = function(headNode, bodyNode, cb)
 {
     var self = this;
-    var skip = bodyNode.skip;
-    if(skip == undefined)
-    {
-        skip = 0;
-    }
-    else
-    {
-        skip = parseInt(skip);
-    }
-    var limit = bodyNode.limit;
-    if(limit == undefined)
-    {
-        limit = 20;
-    }
-    else
-    {
-        limit = parseInt(limit);
-    }
-    var sort = bodyNode.sort;
-    if(sort == undefined)
-    {
-        sort = {zzcId:1};
-    }
-    var cond = bodyNode.cond;
-    if(cond == undefined)
-    {
-        cond = {};
-    }
-    else
-    {
-        cond = JSON.parse(cond);
-    }
-    var backBodyNode = {title:"view tickets", skip:skip, limit:limit};
+    var backBodyNode = {title:"view tickets"};
+    pageUtil.parse(bodyNode, backBodyNode);
     backBodyNode.ticketStatusArray = prop.ticketStatusArray;
-    backBodyNode.cond = cond;
     backBodyNode.games = prop.games;
     var ticketCol = dc.mg.get("ticket");
-    var cursor = ticketCol.find(cond, {}).sort(sort).skip(skip).limit(limit);
+    var cursor = ticketCol.find(backBodyNode.cond, {}).sort(backBodyNode.sort).skip(backBodyNode.skip).limit(backBodyNode.limit);
     cursor.toArray(function(err, data){
         for(var key in data)
         {

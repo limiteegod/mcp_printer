@@ -24,7 +24,7 @@ html(lang="en")
             .clearfix(style="margin-top:8px")
                 .vs_grid_plain(style="width:100px;text-align:right;") 金额:
                 .vs_grid_plain(style="margin-left:8px;")=rst.amount
-                |(分)
+                    |(分)
             .clearfix(style="margin-top:8px")
                 .vs_grid_plain(style="width:100px;text-align:right;") 玩法:
                 .vs_grid_plain(style="margin-left:8px;")=rst.game[rst.playTypeCode].name
@@ -35,11 +35,17 @@ html(lang="en")
                 .vs_grid_plain(style="width:100px;text-align:right;") 平台号码:
                 .vs_grid_plain(style="margin-left:8px;")=rst.numbers
             .clearfix(style="margin-top:8px")
-                .vs_grid_plain(style="width:100px;text-align:right;") 出票号码:
-                .vs_grid_plain(style="margin-left:8px;")=rst.ball
-            .clearfix(style="margin-top:8px")
                 .vs_grid_plain(style="width:100px;text-align:right;") 状态:
                 .vs_grid_plain(style="margin-left:8px;")=rst.status.des
             .clearfix(style="margin-top:8px")
+                .vs_grid_plain(style="width:100px;text-align:right;") 出票号码:
+                .vs_grid_plain(style="margin-left:8px;")=rst.ball
+            .clearfix(style="margin-top:8px")
                 .vs_grid_plain(style="width:100px;text-align:right;") 出票返回:
                 .vs_grid_plain(style="margin-left:8px;")=rst.zzcMsg
+            .clearfix(style="margin-top:8px")
+                .vs_grid_plain(style="width:100px;text-align:right;") 平台返回代码:
+                .vs_grid_plain(style="margin-left:8px;")=rst.platCode
+            .clearfix(style="margin-top:8px")
+                .vs_grid_plain(style="width:100px;text-align:right;") 平台返回描述:
+                .vs_grid_plain(style="margin-left:8px;")=rst.platDes

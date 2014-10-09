@@ -5,7 +5,11 @@ var select = require('xpath.js');
 var DOMParser = require('xmldom').DOMParser;
 var XMLSerializer = require('xmldom').XMLSerializer;
 var prop = require('../config/Prop.js');
-var digestUtil = require('./DigestUtil.js');
+
+var esut = require('easy_util');
+var log = esut.log;
+var digestUtil = esut.digestUtil;
+
 var options = prop.zzc.site;
 var zzc = prop.zzc;
 

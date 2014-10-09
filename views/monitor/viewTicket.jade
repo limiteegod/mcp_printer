@@ -57,6 +57,14 @@ html(lang="en")
                     toPage(1);
                 });
 
+                //clear
+                var clearButton = Node.one("#clear");
+                clearButton.on("click", function(){
+                    CurSite.sendUnDigest(Io, Json, "AD02", {}, function(err, data){
+                        toPage(1);
+                    });
+                });
+
                 //绑定事件
                 Node.all(".detail").each(function(item){
                     item.on("click", function(){
@@ -106,6 +114,7 @@ html(lang="en")
                 #zzcId.vs_grid_plain(initValue=cond.zzcId)
                 .vs_grid_plain(style="padding-top:4px;margin-left:12px;")
                     input(id="search", type="button", value="查询")
+                    input(id="clear", type="button", value="清空表")
             .clearfix
             #tickets.container(style="width:956px;")
                 table
