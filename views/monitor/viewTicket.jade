@@ -116,16 +116,16 @@ html(lang="en")
                     input(id="search", type="button", value="查询")
                     input(id="clear", type="button", value="清空表")
             .clearfix
-            #tickets.container(style="width:956px;")
+            #tickets.container
                 table
                     thead
                         tr
-                            td(style="width:276px;") 彩票id
-                            td(style="width:200px;") 出票id
-                            td(style="width:100px;") 游戏
-                            td(style="width:110px;") 状态
-                            td(style="width:120px;") 出票返回
-                            td(style="width:134px;") 操作
+                            td(w="176") 彩票id
+                            td(w="176") 出票id
+                            td(w="88") 游戏
+                            td(w="88") 状态
+                            td(w="176") 出票返回
+                            td(w="176") 操作
                     tbody
                         - each val in rst
                             tr
