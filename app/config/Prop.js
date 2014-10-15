@@ -28,7 +28,7 @@ if(target == 'dev' || target == 'home')
     var platform = {};
     platform.site = {
         hostname: '127.0.0.1',
-        port: 9081,
+        port: 9090,
         path: '/mcp-filter/main/interface.htm',
         method: 'POST'
     };
@@ -60,8 +60,8 @@ if(target == 'test')
     //平台地址
     var platform = {};
     platform.site = {
-        hostname: '182.254.139.133',
-        port: 8080,
+        hostname: '182.254.129.17',
+        port: 9090,
         path: '/mcp-filter/main/interface.htm',
         method: 'POST'
     };

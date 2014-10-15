@@ -12,10 +12,6 @@ PlatInterUtil.prototype.get= function(userId, userType, channelCode, userKey, cm
     body.uniqueId = digestUtil.createUUID();
     var bodyStr = JSON.stringify(body);
     var head = {userId:userId, userType:userType, channelCode:channelCode, digest:"", digestType:"3des", cmd:cmd, ver:prop.platform.ver};
-    if(cmd == "AD01")
-    {
-        head.digestType = "";
-    }
     var encodedBody = bodyStr;
     if(head.digestType.length > 0)
     {
